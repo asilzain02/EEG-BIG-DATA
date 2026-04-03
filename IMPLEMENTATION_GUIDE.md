@@ -194,6 +194,13 @@ Use script: `scripts/edf_to_csv.py`
 python scripts/edf_to_csv.py \
   --input-dir /home/hadoop/eeg_edf \
   --output-dir /home/hadoop/eeg_dataset \
+  --step 1 #Don't use this. use below one
+```
+
+```bash
+python scripts/edf_to_csv.py \
+  --input-dir /mnt/hgfs/EEG_DATA/chb01 \
+  --output-dir /home/hadoop/eeg_dataset \
   --step 1
 ```
 
