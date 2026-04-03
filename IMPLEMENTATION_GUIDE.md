@@ -178,6 +178,38 @@ yarn node -list
 
 ## 2) Dataset Handling in HDFS (62.4 GB EEG)
 
+> If your source files are **.edf**, first convert them to CSV using the included script, then upload CSV to HDFS.
+
+### 2.0 Convert `.edf` to `.csv` (NEW)
+
+Install EDF conversion dependency:
+
+```bash
+pip install pyEDFlib
+```
+
+Use script: `scripts/edf_to_csv.py`
+
+```bash
+python scripts/edf_to_csv.py \
+  --input-dir /home/hadoop/eeg_edf \
+  --output-dir /home/hadoop/eeg_dataset \
+  --step 1
+```
+
+Output CSV schema used by MapReduce:
+
+```text
+timestamp,channel,value
+```
+
+- `timestamp`: seconds from recording start
+- `channel`: EEG channel name from EDF metadata
+- `value`: signal amplitude
+
+> Tip for huge EDFs: set `--step 2` or `--step 4` to downsample export and reduce storage size for quick experiments.
+
+After conversion, assume your EEG CSV files are in local folder:
 Assume your EEG files are in local folder:
 
 ```bash
@@ -581,6 +613,15 @@ start-yarn.sh
 jps
 
 # 2) Upload EEG data
+# (optional) If dataset is EDF, convert first:
+pip install pyEDFlib
+python scripts/edf_to_csv.py --input-dir /home/hadoop/eeg_edf --output-dir /home/hadoop/eeg_dataset --step 1
+
+# 3) Upload EEG CSV data
+hdfs dfs -mkdir -p /projects/eeg/input
+hdfs dfs -put /home/hadoop/eeg_dataset/* /projects/eeg/input/
+
+# 4) Build job
 hdfs dfs -mkdir -p /projects/eeg/input
 hdfs dfs -put /home/hadoop/eeg_dataset/* /projects/eeg/input/
 
@@ -590,6 +631,14 @@ mkdir -p build
 javac -classpath "$HADOOP_CLASSPATH" -d build src/main/java/org/eeg/EEGFeatureExtraction.java
 jar -cvf eeg-feature-extraction.jar -C build .
 
+# 5) Run job
+hdfs dfs -rm -r -f /projects/eeg/output/features
+hadoop jar eeg-feature-extraction.jar org.eeg.EEGFeatureExtraction /projects/eeg/input /projects/eeg/output/features
+
+# 6) Check output
+hdfs dfs -cat /projects/eeg/output/features/part-r-00000
+
+# 7) Visualize
 # 4) Run job
 hdfs dfs -rm -r -f /projects/eeg/output/features
 hadoop jar eeg-feature-extraction.jar org.eeg.EEGFeatureExtraction /projects/eeg/input /projects/eeg/output/features
