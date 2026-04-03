@@ -210,6 +210,7 @@ timestamp,channel,value
 > Tip for huge EDFs: set `--step 2` or `--step 4` to downsample export and reduce storage size for quick experiments.
 
 After conversion, assume your EEG CSV files are in local folder:
+Assume your EEG files are in local folder:
 
 ```bash
 /home/hadoop/eeg_dataset/
@@ -621,6 +622,10 @@ hdfs dfs -mkdir -p /projects/eeg/input
 hdfs dfs -put /home/hadoop/eeg_dataset/* /projects/eeg/input/
 
 # 4) Build job
+hdfs dfs -mkdir -p /projects/eeg/input
+hdfs dfs -put /home/hadoop/eeg_dataset/* /projects/eeg/input/
+
+# 3) Build job
 export HADOOP_CLASSPATH=$(hadoop classpath)
 mkdir -p build
 javac -classpath "$HADOOP_CLASSPATH" -d build src/main/java/org/eeg/EEGFeatureExtraction.java
@@ -634,6 +639,14 @@ hadoop jar eeg-feature-extraction.jar org.eeg.EEGFeatureExtraction /projects/eeg
 hdfs dfs -cat /projects/eeg/output/features/part-r-00000
 
 # 7) Visualize
+# 4) Run job
+hdfs dfs -rm -r -f /projects/eeg/output/features
+hadoop jar eeg-feature-extraction.jar org.eeg.EEGFeatureExtraction /projects/eeg/input /projects/eeg/output/features
+
+# 5) Check output
+hdfs dfs -cat /projects/eeg/output/features/part-r-00000
+
+# 6) Visualize
 hdfs dfs -get /projects/eeg/output/features/part-r-00000 eeg_features_output.txt
 python scripts/visualize_eeg_features.py --input eeg_features_output.txt --output-dir plots
 ```
